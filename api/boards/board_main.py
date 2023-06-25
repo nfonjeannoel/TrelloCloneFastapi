@@ -19,6 +19,7 @@ current_user_dependency = _Depends(_get_current_user)
 async def create_board(board: _board_schemas.BoardCreate, db: _Session = _Depends(_get_db),
                        current_user: _user_schemas.User = current_user_dependency):
     board = await _board_services.create_board(db=db, board=board, owner_id=current_user.id)
+    # TODO: Create a default todo list for the board
     return _board_schemas.Board.from_orm(board)
 
 
@@ -29,13 +30,30 @@ async def read_boards_by_user(skip: int = 0, limit: int = 100, db: _Session = _D
     return [_board_schemas.Board.from_orm(board) for board in boards]
 
 
-@router.get("/{board_id}", response_model=_board_schemas.Board)
+@router.get("/me/{board_id}", response_model=_board_schemas.Board)
 async def read_user_board(board_id: int, db: _Session = _Depends(_get_db),
                           current_user: _user_schemas.User = current_user_dependency):
     db_board = await _board_services.get_user_board_by_id(db=db, board_id=board_id, owner_id=current_user.id)
     if db_board is None:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
     return _board_schemas.Board.from_orm(db_board)
+
+
+# endpoint to get board by id. If the board is private, then only the owner can access it. else, anyone can access it.
+@router.get("/{board_id}", response_model=_board_schemas.Board)
+async def read_user_board(board_id: int, db: _Session = _Depends(_get_db),
+                          current_user: _user_schemas.User = current_user_dependency):
+    db_board = await _board_services.get_board_by_id(db=db, board_id=board_id)
+    if db_board is None:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
+    if db_board.is_public:
+        return _board_schemas.Board.from_orm(db_board)
+    else:
+        if db_board.owner_id == current_user.id:
+            return _board_schemas.Board.from_orm(db_board)
+        else:
+            raise _HTTPException(status_code=_status.HTTP_401_UNAUTHORIZED,
+                                 detail="You are not authorized to access this board")
 
 
 @router.put("/{board_id}", response_model=_board_schemas.Board)

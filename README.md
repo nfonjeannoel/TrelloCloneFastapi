@@ -10,3 +10,4 @@ This is a clone of the backend of Trello, made with Fastapi and sql databases.
 2. A User can Login to the application securely with a password and email.
 3. JWT is used for authentication
 4. A User can create boards (public or private)
+5. A User can create lists in a board. (columns) and they can be moved, renamed and deleted.

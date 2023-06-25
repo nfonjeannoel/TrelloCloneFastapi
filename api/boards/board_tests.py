@@ -5,7 +5,7 @@ from api.main import app
 client = TestClient(app)
 
 
-class TestTodoModel(unittest.TestCase):
+class TestBoard(unittest.TestCase):
     email = "test3@gmail.com"
     password = "password123"
     username = "Test User"
@@ -75,6 +75,11 @@ class TestTodoModel(unittest.TestCase):
         self.assertEqual(isinstance(response.json(), list), True)
 
     def test_read_user_board_by_id_unauthorized(self):
+        response = client.get("/boards/me/1")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["detail"], "Not authenticated")
+
+    def test_read_board_by_id_unauthorized(self):
         response = client.get("/boards/1")
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["detail"], "Not authenticated")
@@ -94,6 +99,18 @@ class TestTodoModel(unittest.TestCase):
         return response.json(), board_data
 
     def test_read_user_board_by_id_authorized(self):
+        board, old_board = self.create_board_and_get_id()
+        board_id = board["id"]
+        board_data = old_board
+        headers = {
+            "Authorization": f"Bearer {self.access_token}"
+        }
+        response = client.get(f"/boards/me/{board_id}", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["name"], board_data["name"])
+        self.assertEqual(response.json()["id"], board_id)
+
+    def test_read_board_by_id_authorized(self):
         board, old_board = self.create_board_and_get_id()
         board_id = board["id"]
         board_data = old_board

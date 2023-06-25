@@ -5,7 +5,7 @@ from api.main import app
 client = TestClient(app)
 
 
-class TestUserModel(unittest.TestCase):
+class TestUser(unittest.TestCase):
     email = "test1@gmail.com"
     password = "password123"
     username = "Test User"
