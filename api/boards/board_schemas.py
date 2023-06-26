@@ -22,3 +22,30 @@ class Board(_BaseBoard):
 
     class Config:
         orm_mode = True
+
+
+class _BaseBoardMember(_pydantic.BaseModel):
+    email: str
+
+
+class BoardAddMember(_BaseBoardMember):
+    pass
+
+    class Config:
+        orm_mode = True
+
+
+class BoardRemoveMember(_BaseBoardMember):
+    pass
+
+    class Config:
+        orm_mode = True
+
+
+class BoardMember(_pydantic.BaseModel):
+    id: int
+    board_id: int
+    user_id: int
+
+    class Config:
+        orm_mode = True

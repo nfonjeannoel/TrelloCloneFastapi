@@ -27,7 +27,11 @@ async def create_list(list_data: _list_schemas.ListCreate, db: _Session = _Depen
 
 @router.get("/{board_id}", response_model=list[_list_schemas.List])
 async def get_board_lists(db: _Session = _Depends(_get_db),
-                          board: _board_schemas.Board = board_dependency):
+                          board: _board_schemas.Board = board_dependency,
+                          current_user: _user_schemas.User = current_user_dependency):
+    if not board.is_public:
+        if current_user.id != board.owner_id:
+            raise _HTTPException(status_code=_status.HTTP_403_FORBIDDEN, detail="You are not the owner of this board")
     db_lists = await _list_services.get_board_lists(db=db, board_id=board.id)
     return [_list_schemas.List.from_orm(db_list) for db_list in db_lists]
 

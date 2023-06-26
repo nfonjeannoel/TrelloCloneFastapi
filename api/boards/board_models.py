@@ -10,3 +10,10 @@ class Board(_Base):
     name = _Column(_String, index=True)
     is_public = _Column(_Integer, default=True)
     created_date = _Column(_String, default=str(_dt.date.today()))
+
+
+class BoardMember(_Base):
+    __tablename__ = "board_members"
+    id = _Column(_Integer, primary_key=True, index=True)
+    user_id = _Column(_Integer, _ForeignKey("site_users.id"))
+    board_id = _Column(_Integer, _ForeignKey("boards.id"))
