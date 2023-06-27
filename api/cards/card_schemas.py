@@ -22,3 +22,25 @@ class Card(_BaseCard):
 
     class Config:
         orm_mode = True
+
+
+class _BaseComment(_pydantic.BaseModel):
+    comment: str
+
+
+class CommentCreate(_BaseComment):
+    pass
+
+
+class CommentUpdate(_BaseComment):
+    pass
+
+
+class Comment(_BaseComment):
+    id: int
+    card_id: int
+    user_id: int
+    created_date: _dt.date
+
+    class Config:
+        orm_mode = True

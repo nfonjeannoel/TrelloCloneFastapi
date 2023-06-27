@@ -11,12 +11,19 @@ from ..users.user_services import get_current_user as _get_current_user
 from ..users import user_schemas as _user_schemas
 from ..boards import board_schemas as _board_schemas
 from ..boards.board_services import get_current_board as _get_current_board
+from ..boards.board_services import get_member_board as _get_member_board
 
 
 async def get_current_list(list_id: int, board=_Depends(_get_current_board),
                            db: _Session = _Depends(_get_db)):
-    print("list_id", list_id)
-    print("board", _board_schemas.Board.from_orm(board).dict())
+    db_list = await get_board_list_by_id(db=db, list_id=list_id, board_id=board.id)
+    if not db_list:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="List not found")
+    return db_list
+
+
+async def get_member_list(list_id: int, board=_Depends(_get_member_board),
+                          db: _Session = _Depends(_get_db)):
     db_list = await get_board_list_by_id(db=db, list_id=list_id, board_id=board.id)
     if not db_list:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="List not found")

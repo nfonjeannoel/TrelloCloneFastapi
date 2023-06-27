@@ -41,3 +41,37 @@ async def update_card(db: _Session, card_data: _card_schemas.CardUpdate, db_card
 async def delete_card(db: _Session, db_card: _card_models.Card):
     db.delete(db_card)
     db.commit()
+
+
+# comments
+
+async def create_comment(db: _Session, comment_data: _card_schemas.CommentCreate, card_id: int, user_id: int):
+    db_comment = _card_models.Comment(**comment_data.dict(), card_id=card_id, user_id=user_id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+
+async def get_comments_by_card(db: _Session, card_id: int):
+    return db.query(_card_models.Comment).filter(_card_models.Comment.card_id == card_id).all()
+
+
+async def get_comment_by_id(db: _Session, comment_id: int, card_id: int):
+    return db.query(_card_models.Comment).filter(_card_models.Comment.card_id == card_id).filter(
+        _card_models.Comment.id == comment_id).first()
+
+
+async def update_comment(db: _Session, comment_data: _card_schemas.CommentUpdate, db_comment: _card_models.Comment):
+    update_data = comment_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_comment, key, value)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+
+async def delete_comment(db: _Session, db_comment: _card_models.Comment):
+    db.delete(db_comment)
+    db.commit()

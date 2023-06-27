@@ -11,11 +11,38 @@ from ..users.user_services import get_current_user as _get_current_user
 from ..users import user_schemas as _user_schemas
 
 
-async def get_current_board(board_id: int, db: _Session = _Depends(_get_db)):
+async def get_current_board(board_id: int, db: _Session = _Depends(_get_db),
+                            current_user: _user_schemas.User = _Depends(_get_current_user)):
     board = await get_board_by_id(db=db, board_id=board_id)
     if not board:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
-    return board
+
+    if board.is_public:
+        return board
+
+    # return board if user is member of board
+    if await get_board_members_by_user_id_board_id(db=db, user_id=current_user.id, board_id=board_id):
+        return board
+    else:
+        raise _HTTPException(status_code=_status.HTTP_401_UNAUTHORIZED, detail="User is authorized to view this board")
+
+
+async def get_member_board(board_id: int, db: _Session = _Depends(_get_db),
+                           current_user: _user_schemas.User = _Depends(_get_current_user)):
+    """
+    Get board by id, but only if user is a member of the board
+    :param board_id:
+    :param db:
+    :return:
+    """
+    board = await get_board_by_id(db=db, board_id=board_id)
+    if not board:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
+
+    if await get_board_members_by_user_id_board_id(db=db, user_id=current_user.id, board_id=board_id):
+        return board
+    else:
+        raise _HTTPException(status_code=_status.HTTP_403_FORBIDDEN, detail="User is not a member of this board")
 
 
 async def create_board(db: _Session, board: _board_schemas.BoardCreate, owner_id: int):
@@ -73,6 +100,10 @@ async def add_member_to_board(db: _Session, board_id: int, member_id: int):
     return db_member
 
 
+async def get_public_boards(db: _Session):
+    return db.query(_board_models.Board).filter(_board_models.Board.is_public == True).all()
+
+
 async def remove_member_from_board(db: _Session, board_id: int, member_id: int):
     db_member = await get_board_member_by_id(db=db, board_id=board_id, member_id=member_id)
     if not db_member:
@@ -88,3 +119,21 @@ async def get_board_members(db: _Session, board_id: int):
 
 async def get_boards_members_by_user_id(db: _Session, user_id: int):
     return db.query(_board_models.BoardMember).filter(_board_models.BoardMember.user_id == user_id).all()
+
+
+async def get_board_members_by_user_id_board_id(db: _Session, user_id: int, board_id: int):
+    """
+    Get board member by user id and board id
+    :param db:
+    :param user_id:
+    :param board_id:
+    :return:  BoardMember or None
+    """
+    return db.query(_board_models.BoardMember).filter(_board_models.BoardMember.user_id == user_id).filter(
+        _board_models.BoardMember.board_id == board_id).first()
+
+
+async def delete_all_members_from_board(db: _Session, board_id: int):
+    db.query(_board_models.BoardMember).filter(_board_models.BoardMember.board_id == board_id).delete()
+    db.commit()
+    return True

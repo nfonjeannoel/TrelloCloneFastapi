@@ -26,9 +26,9 @@ async def add_member_to_board(board_add: _board_schemas.BoardAddMember, db: _Ses
     user_to_add = await _user_services.get_user_by_email(db=db, email=board_add.email)
     if not user_to_add:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
-    # check if user is owner
-    if user_to_add.id == current_user.id:
-        raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST, detail="You are the owner of this board")
+    # # check if user is owner
+    # if board.owner_id == current_user.id:
+    #     raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST, detail="You are the owner of this board")
     # check if user is already a member
     if await _board_services.user_is_board_member(db=db, board_id=board.id, user_id=user_to_add.id):
         raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST, detail="User is already a member")
@@ -47,12 +47,16 @@ async def remove_member_from_board(board_remove: _board_schemas.BoardRemoveMembe
     user_to_remove = await _user_services.get_user_by_email(db=db, email=board_remove.email)
     if not user_to_remove:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
-    # check if user is owner
-    if user_to_remove.id == current_user.id:
-        raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST, detail="You are the owner of this board")
+    # # check if user is owner
+    # if current_user.id == board.owner_id:
+    #     raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST, detail="You are the owner of this board")
     # check if user is already a member
     if not await _board_services.user_is_board_member(db=db, board_id=board.id, user_id=user_to_remove.id):
         raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST, detail="User is not a member")
+    # if user is owner, raise error
+    if user_to_remove.id == board.owner_id:
+        raise _HTTPException(status_code=_status.HTTP_400_BAD_REQUEST,
+                             detail="You cannot remove the owner of the board")
 
     # remove user from board
     await _board_services.remove_member_from_board(db=db, board_id=board.id, member_id=user_to_remove.id)
@@ -81,7 +85,7 @@ async def create_board(board: _board_schemas.BoardCreate, db: _Session = _Depend
     return _board_schemas.Board.from_orm(board)
 
 
-@router.get("", response_model=list[_board_schemas.Board])
+@router.get("/me", response_model=list[_board_schemas.Board])
 async def read_boards_by_user(db: _Session = _Depends(_get_db),
                               current_user: _user_schemas.User = current_user_dependency):
     # get all boards where the user is a member
@@ -89,6 +93,12 @@ async def read_boards_by_user(db: _Session = _Depends(_get_db),
     # for each board, get the board object and return the list of boards. make sure to convert to board schema
     return [_board_schemas.Board.from_orm(await _board_services.get_board_by_id(db=db, board_id=board.board_id)) for
             board in db_boards]
+
+
+@router.get("/public", response_model=list[_board_schemas.Board])
+async def read_boards_by_user(db: _Session = _Depends(_get_db)):
+    db_boards = await _board_services.get_public_boards(db=db)
+    return [_board_schemas.Board.from_orm(board) for board in db_boards]
 
 
 @router.get("/me/{board_id}", response_model=_board_schemas.Board)
@@ -118,12 +128,12 @@ async def read_user_board(board_id: int, db: _Session = _Depends(_get_db),
 
 
 @router.put("/{board_id}", response_model=_board_schemas.Board)
-async def update_user_board(board_id: int, board: _board_schemas.BoardUpdate, db: _Session = _Depends(_get_db),
+async def update_user_board(board_data: _board_schemas.BoardUpdate, db: _Session = _Depends(_get_db),
+                            board=_Depends(_board_services.get_current_board),
                             current_user: _user_schemas.User = current_user_dependency):
-    db_board = await _board_services.get_user_board_by_id(db=db, board_id=board_id, owner_id=current_user.id)
-    if db_board is None:
-        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
-    board = await _board_services.update_board(db=db, board=board, db_board=db_board)
+    if not await _board_services.user_is_board_member(db=db, board_id=board.id, user_id=current_user.id):
+        raise _HTTPException(status_code=_status.HTTP_401_UNAUTHORIZED, detail="You are not a member of this board")
+    board = await _board_services.update_board(db=db, board=board_data, db_board=board)
     return _board_schemas.Board.from_orm(board)
 
 
@@ -134,3 +144,5 @@ async def delete_user_board(board_id: int, db: _Session = _Depends(_get_db),
     if db_board is None:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
     _ = await _board_services.delete_board(db=db, db_board=db_board)
+#     remove all members from board
+    await _board_services.delete_all_members_from_board(db=db, board_id=board_id)
