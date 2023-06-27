@@ -44,3 +44,25 @@ class Comment(_BaseComment):
 
     class Config:
         orm_mode = True
+
+
+class _BaseCheckList(_pydantic.BaseModel):
+    title: str
+    is_checked: bool
+    position: int
+
+
+class CheckListCreate(_BaseCheckList):
+    pass
+
+
+class CheckListUpdate(_BaseCheckList):
+    pass
+
+
+class CheckList(_BaseCheckList):
+    id: int
+    card_id: int
+
+    class Config:
+        orm_mode = True

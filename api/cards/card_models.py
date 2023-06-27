@@ -24,3 +24,12 @@ class Comment(_Base):
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
     comment = _Column(_String)
     created_date = _Column(_String, default=str(_dt.date.today()))
+
+
+class CheckList(_Base):
+    __tablename__ = "check_lists"
+    id = _Column(_Integer, primary_key=True, index=True)
+    card_id = _Column(_Integer, _ForeignKey("cards.id"))
+    title = _Column(_String)
+    is_checked = _Column(_Integer, default=False)
+    position = _Column(_Integer, default=0)

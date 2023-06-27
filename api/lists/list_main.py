@@ -8,6 +8,7 @@ from ..database import get_db as _get_db
 from . import list_schemas as _list_schemas
 from sqlalchemy.orm import Session as _Session
 from ..boards import board_schemas as _board_schemas
+from ..boards.board_services import get_member_board as _get_member_board
 
 router = _APIRouter(
     prefix="/lists",
@@ -16,11 +17,12 @@ router = _APIRouter(
 
 current_user_dependency = _Depends(_get_current_user)
 board_dependency = _Depends(_get_current_board)
+member_board_dependency = _Depends(_get_member_board)
 
 
 @router.post("/{board_id}/create_list", response_model=_list_schemas.List)
 async def create_list(list_data: _list_schemas.ListCreate, db: _Session = _Depends(_get_db),
-                      board: _board_schemas.Board = board_dependency):
+                      board: _board_schemas.Board = member_board_dependency):
     db_list = await _list_services.create_list(db=db, list_data=list_data, board_id=board.id)
     return _list_schemas.List.from_orm(db_list)
 
@@ -44,7 +46,7 @@ async def get_board_list(list_id: int, db: _Session = _Depends(_get_db)):
     return _list_schemas.List.from_orm(db_list)
 
 
-@router.put("/{list_id}/{board_id}", response_model=_list_schemas.List, dependencies=[board_dependency])
+@router.put("/{list_id}/{board_id}", response_model=_list_schemas.List, dependencies=[member_board_dependency])
 async def update_board_list(list_id: int, list_data: _list_schemas.ListUpdate, db: _Session = _Depends(_get_db)):
     db_list = await _list_services.get_list_by_id(db=db, list_id=list_id)
     if db_list is None:
@@ -53,7 +55,7 @@ async def update_board_list(list_id: int, list_data: _list_schemas.ListUpdate, d
     return _list_schemas.List.from_orm(db_list)
 
 
-@router.delete("/{list_id}/{board_id}", dependencies=[board_dependency],
+@router.delete("/{list_id}/{board_id}", dependencies=[member_board_dependency],
                status_code=_status.HTTP_204_NO_CONTENT)
 async def delete_board_list(list_id: int, db: _Session = _Depends(_get_db)):
     db_list = await _list_services.get_list_by_id(db=db, list_id=list_id)

@@ -75,3 +75,38 @@ async def update_comment(db: _Session, comment_data: _card_schemas.CommentUpdate
 async def delete_comment(db: _Session, db_comment: _card_models.Comment):
     db.delete(db_comment)
     db.commit()
+
+
+# checklists
+
+async def create_checklist(db: _Session, checklist_data: _card_schemas.CheckListCreate, card_id: int):
+    db_checklist = _card_models.CheckList(**checklist_data.dict(), card_id=card_id)
+    db.add(db_checklist)
+    db.commit()
+    db.refresh(db_checklist)
+    return db_checklist
+
+
+async def get_checklists_by_card(db: _Session, card_id: int):
+    return db.query(_card_models.CheckList).filter(_card_models.CheckList.card_id == card_id).all()
+
+
+async def get_checklist_by_id(db: _Session, checklist_id: int, card_id: int):
+    return db.query(_card_models.CheckList).filter(_card_models.CheckList.card_id == card_id).filter(
+        _card_models.CheckList.id == checklist_id).first()
+
+
+async def update_checklist(db: _Session, checklist_data: _card_schemas.CheckListUpdate,
+                           db_checklist: _card_models.CheckList):
+    update_data = checklist_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_checklist, key, value)
+    db.add(db_checklist)
+    db.commit()
+    db.refresh(db_checklist)
+    return db_checklist
+
+
+async def delete_checklist(db: _Session, db_checklist: _card_models.CheckList):
+    db.delete(db_checklist)
+    db.commit()

@@ -13,3 +13,4 @@ This is a clone of the backend of Trello, made with Fastapi and sql databases.
 5. A User can create lists in a board. (columns) and they can be moved, renamed and deleted.
 6. A User can create cards in a list. (tasks) and they can be moved, renamed and deleted.
 7. Comments can be added to cards by users who have access to the board
+8. A checklist can be added to cards by users who have access to the board

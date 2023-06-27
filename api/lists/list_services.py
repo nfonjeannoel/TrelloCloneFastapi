@@ -48,6 +48,12 @@ async def get_board_lists(db: _Session, board_id: int):
 
 
 async def get_list_by_id(db: _Session, list_id: int):
+    """
+    Get lists by id
+    :param db:
+    :param list_id:
+    :return:
+    """
     return db.get(_list_models.List, list_id)
 
 
