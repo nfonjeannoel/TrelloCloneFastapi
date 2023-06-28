@@ -110,3 +110,32 @@ async def update_checklist(db: _Session, checklist_data: _card_schemas.CheckList
 async def delete_checklist(db: _Session, db_checklist: _card_models.CheckList):
     db.delete(db_checklist)
     db.commit()
+
+
+# card members
+
+async def add_card_member(db: _Session, card_id: int, user_id: int):
+    db_card_member = _card_models.CardMember(card_id=card_id, user_id=user_id)
+    db.add(db_card_member)
+    db.commit()
+    db.refresh(db_card_member)
+    return db_card_member
+
+
+async def get_card_member_by_id(db: _Session, card_id: int, user_id: int):
+    return db.query(_card_models.CardMember).filter(_card_models.CardMember.card_id == card_id).filter(
+        _card_models.CardMember.user_id == user_id).first()
+
+
+async def delete_card_member(db: _Session, db_card_member: _card_models.CardMember):
+    db.delete(db_card_member)
+    db.commit()
+
+
+async def get_card_members_by_card(db: _Session, card_id: int):
+    return db.query(_card_models.CardMember).filter(_card_models.CardMember.card_id == card_id).all()
+
+
+async def get_card_member_by_user(db: _Session, user_id: int, card_id: int):
+    return db.query(_card_models.CardMember).filter(_card_models.CardMember.card_id == card_id).filter(
+        _card_models.CardMember.user_id == user_id).first()

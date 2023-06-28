@@ -66,3 +66,20 @@ class CheckList(_BaseCheckList):
 
     class Config:
         orm_mode = True
+
+
+class CardMemberCreate(_pydantic.BaseModel):
+    email: str
+
+
+class CardMemberRemove(_pydantic.BaseModel):
+    email: str
+
+
+class CardMember(_pydantic.BaseModel):
+    id: int
+    card_id: int
+    user_id: int
+
+    class Config:
+        orm_mode = True

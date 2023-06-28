@@ -33,3 +33,10 @@ class CheckList(_Base):
     title = _Column(_String)
     is_checked = _Column(_Integer, default=False)
     position = _Column(_Integer, default=0)
+
+
+class CardMember(_Base):
+    __tablename__ = "card_members"
+    id = _Column(_Integer, primary_key=True, index=True)
+    card_id = _Column(_Integer, _ForeignKey("cards.id"))
+    user_id = _Column(_Integer, _ForeignKey("site_users.id"))

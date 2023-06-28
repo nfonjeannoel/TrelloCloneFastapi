@@ -4,10 +4,12 @@ from . import card_services as _card_services
 from ..users.user_services import get_current_user as _get_current_user
 from ..boards.board_services import get_current_board as _get_current_board
 from ..boards.board_services import get_member_board as _get_member_board
+from ..boards import board_services as _board_services
 from ..lists.list_services import get_current_list as _get_current_list
 from ..lists.list_services import get_member_list as _get_member_list
 from ..lists import list_services as _list_services
 from ..users import user_schemas as _user_schemas
+from ..users import user_services as _user_services
 from ..database import get_db as _get_db
 from . import card_schemas as _card_schemas
 from sqlalchemy.orm import Session as _Session
@@ -27,6 +29,11 @@ comments_router = _APIRouter(
 checklists_router = _APIRouter(
     prefix="/checklists",
     tags=["checklists"],
+)
+
+card_member_router = _APIRouter(
+    prefix="/card_members",
+    tags=["card_members"],
 )
 
 current_user_dependency = _Depends(_get_current_user)
@@ -180,3 +187,54 @@ async def delete_checklist(checklist_id: int, card_id: int, db: _Session = _Depe
     if not db_checklist:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Checklist not found")
     db_checklist = await _card_services.delete_checklist(db=db, db_checklist=db_checklist)
+
+
+# card members
+
+@card_member_router.post("/{board_id}/{card_id}/add_member", response_model=_card_schemas.CardMember,
+                         dependencies=[current_user_dependency])
+async def add_card_member(card_id: int, card_member_data: _card_schemas.CardMemberCreate,
+                          db: _Session = _Depends(_get_db),
+                          board=member_board_dependency):
+    db_user = await _user_services.get_user_by_email(db=db, email=card_member_data.email)
+    if not db_user:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
+    # check if user is the member of the board
+    if not await _board_services.user_is_board_member(db=db, user_id=db_user.id, board_id=board.id):
+        raise _HTTPException(status_code=_status.HTTP_401_UNAUTHORIZED, detail="User is not a member of the board")
+    db_card_member = await _card_services.get_card_member_by_user(db=db, user_id=db_user.id, card_id=card_id)
+    if db_card_member:
+        raise _HTTPException(status_code=_status.HTTP_409_CONFLICT, detail="User already added")
+
+    db_card_member = await _card_services.add_card_member(db=db, card_id=card_id,
+                                                          user_id=db_user.id)
+    return _card_schemas.CardMember.from_orm(db_card_member)
+
+
+@card_member_router.get("/{board_id}/{card_id}/get_card_members", response_model=list[_card_schemas.CardMember],
+                        dependencies=[board_dependency])
+async def get_card_members(card_id: int, db: _Session = _Depends(_get_db)):
+    db_card_members = await _card_services.get_card_members_by_card(db=db, card_id=card_id)
+    return [_card_schemas.CardMember.from_orm(db_card_member) for db_card_member in db_card_members]
+
+
+@card_member_router.get("/{board_id}/{card_id}/{card_member_id}/get_card_member",
+                        response_model=_card_schemas.CardMember, dependencies=[board_dependency])
+async def get_card_member(card_id: int, db: _Session = _Depends(_get_db),
+                          current_user: _user_schemas.User = current_user_dependency):
+    db_card_member = await _card_services.get_card_member_by_id(db=db, card_id=card_id, user_id=current_user.id)
+    return _card_schemas.CardMember.from_orm(db_card_member)
+
+
+@card_member_router.delete("/{board_id}/{card_id}/{card_member_id}/delete_card_member",
+                           status_code=_status.HTTP_204_NO_CONTENT,
+                           dependencies=[member_board_dependency, current_user_dependency])
+async def delete_card_member(card_id: int, card_member: _card_schemas.CardMemberRemove,
+                             db: _Session = _Depends(_get_db)):
+    db_user = await _user_services.get_user_by_email(db=db, email=card_member.email)
+    if not db_user:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
+    db_card_member = await _card_services.get_card_member_by_user(db=db, user_id=db_user.id, card_id=card_id)
+    if not db_card_member:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
+    db_card_member = await _card_services.delete_card_member(db=db, db_card_member=db_card_member)
