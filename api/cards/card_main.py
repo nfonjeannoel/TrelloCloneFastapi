@@ -238,3 +238,4 @@ async def delete_card_member(card_id: int, card_member: _card_schemas.CardMember
     if not db_card_member:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
     db_card_member = await _card_services.delete_card_member(db=db, db_card_member=db_card_member)
+#
