@@ -17,3 +17,4 @@ This is a clone of the backend of Trello, made with Fastapi and sql databases.
 9. users can be added as members to card to see card updates
 10. Any activity on the card should be tracked
 11. a card can be archived so that it is not visible on the board but is still accessible
+12. A user can add labels to a card, edit label names and colors, create new labels and delete labels

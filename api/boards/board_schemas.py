@@ -49,3 +49,26 @@ class BoardMember(_pydantic.BaseModel):
 
     class Config:
         orm_mode = True
+
+
+
+
+class _BaseBoardLabel(_pydantic.BaseModel):
+    name: str
+    color: str
+
+
+class BoardLabelCreate(_BaseBoardLabel):
+    pass
+
+
+class BoardLabelUpdate(_BaseBoardLabel):
+    pass
+
+
+class BoardLabel(_BaseBoardLabel):
+    id: int
+    board_id: int
+
+    class Config:
+        orm_mode = True

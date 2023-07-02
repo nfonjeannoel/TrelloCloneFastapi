@@ -5,6 +5,7 @@ from ..users.user_services import get_current_user as _get_current_user
 from ..users import user_services as _user_services
 from ..cards import card_services as _card_services
 from ..users import user_schemas as _user_schemas
+from ..boards.board_services import get_member_board as _get_member_board, get_current_board as _get_current_board
 
 from ..database import get_db as _get_db
 from . import board_schemas as _board_schemas
@@ -16,6 +17,8 @@ router = _APIRouter(
 )
 
 current_user_dependency = _Depends(_get_current_user)
+board_dependency = _Depends(_get_current_board)
+member_board_dependency = _Depends(_get_member_board)
 
 
 # endpoint to add member to board
@@ -151,3 +154,47 @@ async def delete_user_board(board_id: int, db: _Session = _Depends(_get_db),
     _ = await _board_services.delete_board(db=db, db_board=db_board)
     #     remove all members from board
     await _board_services.delete_all_members_from_board(db=db, board_id=board_id)
+
+
+# board labels
+# TODO: WHEN A LABEL IS DELETED, REMOVE IT FROM ALL CARDS
+@router.post("/{board_id}/labels", response_model=_board_schemas.BoardLabel, dependencies=[current_user_dependency])
+async def create_board_label(board_label: _board_schemas.BoardLabelCreate, db: _Session = _Depends(_get_db),
+                             board=member_board_dependency):
+    db_board_label = await _board_services.create_board_label(db=db, board_label=board_label, board_id=board.id)
+    return _board_schemas.BoardLabel.from_orm(db_board_label)
+
+
+@router.get("/{board_id}/labels", response_model=list[_board_schemas.BoardLabel])
+async def read_board_labels(db: _Session = _Depends(_get_db), board=board_dependency):
+    db_board_labels = await _board_services.get_board_labels(db=db, board_id=board.id)
+    return [_board_schemas.BoardLabel.from_orm(board_label) for board_label in db_board_labels]
+
+
+@router.get("/{board_id}/labels/{label_id}", response_model=_board_schemas.BoardLabel)
+async def read_board_label(label_id: int, db: _Session = _Depends(_get_db), board=board_dependency):
+    db_board_label = await _board_services.get_board_label(db=db, board_id=board.id, label_id=label_id)
+    if db_board_label is None:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
+    return _board_schemas.BoardLabel.from_orm(db_board_label)
+
+
+@router.put("/{board_id}/labels/{label_id}", response_model=_board_schemas.BoardLabel,
+            dependencies=[current_user_dependency])
+async def update_board_label(label_id: int, board_label: _board_schemas.BoardLabelUpdate,
+                             db: _Session = _Depends(_get_db), board=member_board_dependency):
+    db_board_label = await _board_services.get_board_label(db=db, board_id=board.id, label_id=label_id)
+    if db_board_label is None:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
+    db_board_label = await _board_services.update_board_label(db=db, board_label=board_label,
+                                                              db_board_label=db_board_label)
+    return _board_schemas.BoardLabel.from_orm(db_board_label)
+
+
+@router.delete("/{board_id}/labels/{label_id}", status_code=_status.HTTP_204_NO_CONTENT,
+               dependencies=[current_user_dependency])
+async def delete_board_label(label_id: int, db: _Session = _Depends(_get_db), board=member_board_dependency):
+    db_board_label = await _board_services.get_board_label(db=db, board_id=board.id, label_id=label_id)
+    if db_board_label is None:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
+    await _board_services.delete_board_label(db=db, db_board_label=db_board_label)

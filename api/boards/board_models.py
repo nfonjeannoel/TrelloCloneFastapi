@@ -17,3 +17,21 @@ class BoardMember(_Base):
     id = _Column(_Integer, primary_key=True, index=True)
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
     board_id = _Column(_Integer, _ForeignKey("boards.id"))
+
+
+# TODO: ADD DEFAULT LABELS TO BOARD
+class CoreLabel(_Base):
+    # applies to all boards
+    __tablename__ = "core_labels"
+    id = _Column(_Integer, primary_key=True, index=True)
+    name = _Column(_String)
+    color = _Column(_String)
+
+
+class BoardLabel(_Base):
+    # applies to a specific board
+    __tablename__ = "board_labels"
+    id = _Column(_Integer, primary_key=True, index=True)
+    board_id = _Column(_Integer, _ForeignKey("boards.id"))
+    name = _Column(_String)
+    color = _Column(_String)

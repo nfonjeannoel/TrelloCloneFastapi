@@ -41,6 +41,11 @@ card_activity_router = _APIRouter(
     tags=["card_activity"],
 )
 
+card_label_router = _APIRouter(
+    prefix="/card_labels",
+    tags=["card_labels"],
+)
+
 current_user_dependency = _Depends(_get_current_user)
 board_dependency = _Depends(_get_current_board)
 member_board_dependency = _Depends(_get_member_board)
@@ -140,8 +145,6 @@ async def unarchive_card(card_id: int, list_data: _list_schemas.List = member_li
                                            activity=activity)
 
     return _card_schemas.Card.from_orm(db_card)
-
-
 
 
 # comments
@@ -327,3 +330,33 @@ async def add_card_activity(card_id: int, card_activity_data: _card_schemas.Card
                                                               user_id=current_user.id,
                                                               activity=card_activity_data.activity)
     return _card_schemas.CardActivity.from_orm(db_card_activity)
+
+
+# card label
+
+@card_label_router.post("/{board_id}/{card_id}/{label_id}/add_card_label", response_model=_card_schemas.CardLabel,
+                        dependencies=[member_board_dependency, current_user_dependency])
+async def add_card_label(card_id: int, label_id: int, db: _Session = _Depends(_get_db)):
+    db_card_label = await _card_services.add_card_label(db=db, card_id=card_id,
+                                                        label_id=label_id)
+    if not db_card_label:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
+    return _card_schemas.CardLabel.from_orm(db_card_label)
+
+
+@card_label_router.get("/{board_id}/{card_id}/get_card_labels", response_model=list[_card_schemas.CardLabel],
+                       dependencies=[board_dependency])
+async def get_card_labels(card_id: int, db: _Session = _Depends(_get_db)):
+    db_card_labels = await _card_services.get_card_labels_by_card(db=db, card_id=card_id)
+    return [_card_schemas.CardLabel.from_orm(db_card_label) for db_card_label in db_card_labels]
+
+
+@card_label_router.delete("/{board_id}/{card_id}/{label_id}/delete_card_label",
+                          status_code=_status.HTTP_204_NO_CONTENT,
+                          dependencies=[member_board_dependency])
+async def delete_card_label(card_id: int, label_id: int, db: _Session = _Depends(_get_db)):
+    db_card_label = await _card_services.get_card_label_by_label(db=db, card_id=card_id, label_id=label_id)
+    if not db_card_label:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
+    db_card_label = await _card_services.delete_card_label(db=db, db_card_label=db_card_label)
+    return _card_schemas.CardLabel.from_orm(db_card_label)

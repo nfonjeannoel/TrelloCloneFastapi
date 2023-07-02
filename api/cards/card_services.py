@@ -172,3 +172,27 @@ async def add_card_activity(db: _Session, card_id: int, user_id: int, activity: 
     db.commit()
     db.refresh(db_card_activity)
     return db_card_activity
+
+
+# labels
+
+async def add_card_label(db: _Session, card_id: int, label_id: int):
+    db_card_label = _card_models.CardLabel(card_id=card_id, label_id=label_id)
+    db.add(db_card_label)
+    db.commit()
+    db.refresh(db_card_label)
+    return db_card_label
+
+
+async def get_card_labels_by_card(db: _Session, card_id: int):
+    return db.query(_card_models.CardLabel).filter(_card_models.CardLabel.card_id == card_id).all()
+
+
+async def get_card_label_by_label(db: _Session, card_id: int, label_id: int):
+    return db.query(_card_models.CardLabel).filter(_card_models.CardLabel.card_id == card_id).filter(
+        _card_models.CardLabel.label_id == label_id).first()
+
+
+async def delete_card_label(db: _Session, db_card_label: _card_models.CardLabel):
+    db.delete(db_card_label)
+    db.commit()

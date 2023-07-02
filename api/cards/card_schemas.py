@@ -86,14 +86,6 @@ class CardMember(_pydantic.BaseModel):
         orm_mode = True
 
 
-# class CardActivity(_Base):
-#     __tablename__ = "card_activities"
-#     id = _Column(_Integer, primary_key=True, index=True)
-#     card_id = _Column(_Integer, _ForeignKey("cards.id"))
-#     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
-#     activity = _Column(_String)
-#     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
-
 class CardActivity(_pydantic.BaseModel):
     id: int
     card_id: int
@@ -110,3 +102,20 @@ class CardActivityCreate(_pydantic.BaseModel):
 
     class Config:
         orm_mode = True
+
+
+# class CardLabel(_Base):
+#     __tablename__ = "card_labels"
+#     id = _Column(_Integer, primary_key=True, index=True)
+#     card_id = _Column(_Integer, _ForeignKey("cards.id"))
+#     label_id = _Column(_Integer, _ForeignKey("core_labels.id"))
+
+
+class CardLabel(_pydantic.BaseModel):
+    id: int
+    card_id: int
+    label_id: int
+
+    class Config:
+        orm_mode = True
+

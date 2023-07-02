@@ -49,3 +49,10 @@ class CardActivity(_Base):
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
     activity = _Column(_String)
     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
+
+
+class CardLabel(_Base):
+    __tablename__ = "card_labels"
+    id = _Column(_Integer, primary_key=True, index=True)
+    card_id = _Column(_Integer, _ForeignKey("cards.id"))
+    label_id = _Column(_Integer, _ForeignKey("core_labels.id"))

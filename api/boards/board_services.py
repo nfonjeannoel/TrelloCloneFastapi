@@ -137,3 +137,37 @@ async def delete_all_members_from_board(db: _Session, board_id: int):
     db.query(_board_models.BoardMember).filter(_board_models.BoardMember.board_id == board_id).delete()
     db.commit()
     return True
+
+
+async def create_board_label(db: _Session, board_id: int, board_label: _board_schemas.BoardLabelCreate):
+    db_label = _board_models.BoardLabel(**board_label.dict(), board_id=board_id)
+    db.add(db_label)
+    db.commit()
+    db.refresh(db_label)
+    return db_label
+
+
+async def get_board_labels(db: _Session, board_id: int):
+    return db.query(_board_models.BoardLabel).filter(_board_models.BoardLabel.board_id == board_id).all()
+
+
+async def get_board_label(db: _Session, board_id: int, label_id: int):
+    return db.query(_board_models.BoardLabel).filter(_board_models.BoardLabel.board_id == board_id).filter(
+        _board_models.BoardLabel.id == label_id).first()
+
+
+async def update_board_label(db: _Session, db_board_label: _board_models.BoardLabel,
+                             board_label: _board_schemas.BoardLabelUpdate):
+    update_data = board_label.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_board_label, key, value)
+    db.add(db_board_label)
+    db.commit()
+    db.refresh(db_board_label)
+    return db_board_label
+
+
+async def delete_board_label(db: _Session, db_board_label: _board_models.BoardLabel):
+    db.delete(db_board_label)
+    db.commit()
+    return True
