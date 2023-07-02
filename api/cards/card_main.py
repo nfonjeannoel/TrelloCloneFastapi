@@ -36,17 +36,34 @@ card_member_router = _APIRouter(
     tags=["card_members"],
 )
 
+card_activity_router = _APIRouter(
+    prefix="/card_activity",
+    tags=["card_activity"],
+)
+
 current_user_dependency = _Depends(_get_current_user)
 board_dependency = _Depends(_get_current_board)
 member_board_dependency = _Depends(_get_member_board)
 list_dependency = _Depends(_get_current_list)
 member_list_dependency = _Depends(_get_member_list)
 
+card_activities = {
+    "create_card": "{} created this card",
+    "update_card": "{} updated this card",
+    "add_member": "{} added {} to this card",
+    "remove_member": "{} removed {} from this card",
+}
+
 
 @card_router.post("/{board_id}/{list_id}/create_card", response_model=_card_schemas.Card)
 async def create_card(card_data: _card_schemas.CardCreate, db: _Session = _Depends(_get_db),
+                      current_user: _user_schemas.User = current_user_dependency,
                       list_data: _list_schemas.List = member_list_dependency):
     db_card = await _card_services.create_card(db=db, card_data=card_data, list_id=list_data.id)
+    # add card activity
+    activity = card_activities["create_card"].format(current_user.username)
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=current_user.id,
+                                           activity=activity)
     return _card_schemas.Card.from_orm(db_card)
 
 
@@ -74,6 +91,9 @@ async def update_card(card_data: _card_schemas.CardUpdate, card_id: int,
     if not db_list:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="List not found")
     db_card = await _card_services.update_card(db=db, card_data=card_data, db_card=db_card)
+
+    # add card activity
+    activity = card_activities["update_card"].format(db_card.user.username)
     return _card_schemas.Card.from_orm(db_card)
 
 
@@ -191,10 +211,10 @@ async def delete_checklist(checklist_id: int, card_id: int, db: _Session = _Depe
 
 # card members
 
-@card_member_router.post("/{board_id}/{card_id}/add_member", response_model=_card_schemas.CardMember,
-                         dependencies=[current_user_dependency])
+@card_member_router.post("/{board_id}/{card_id}/add_member", response_model=_card_schemas.CardMember)
 async def add_card_member(card_id: int, card_member_data: _card_schemas.CardMemberCreate,
                           db: _Session = _Depends(_get_db),
+                          current_user: _user_schemas.User = current_user_dependency,
                           board=member_board_dependency):
     db_user = await _user_services.get_user_by_email(db=db, email=card_member_data.email)
     if not db_user:
@@ -208,6 +228,11 @@ async def add_card_member(card_id: int, card_member_data: _card_schemas.CardMemb
 
     db_card_member = await _card_services.add_card_member(db=db, card_id=card_id,
                                                           user_id=db_user.id)
+
+    # add card activity
+    activity = card_activities['add_member'].format(current_user.username, db_user.username)
+    await _card_services.add_card_activity(db=db, card_id=card_id, user_id=current_user.id, activity=activity)
+
     return _card_schemas.CardMember.from_orm(db_card_member)
 
 
@@ -228,8 +253,9 @@ async def get_card_member(card_id: int, db: _Session = _Depends(_get_db),
 
 @card_member_router.delete("/{board_id}/{card_id}/{card_member_id}/delete_card_member",
                            status_code=_status.HTTP_204_NO_CONTENT,
-                           dependencies=[member_board_dependency, current_user_dependency])
+                           dependencies=[member_board_dependency])
 async def delete_card_member(card_id: int, card_member: _card_schemas.CardMemberRemove,
+                             current_user: _user_schemas.User = current_user_dependency,
                              db: _Session = _Depends(_get_db)):
     db_user = await _user_services.get_user_by_email(db=db, email=card_member.email)
     if not db_user:
@@ -238,4 +264,28 @@ async def delete_card_member(card_id: int, card_member: _card_schemas.CardMember
     if not db_card_member:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
     db_card_member = await _card_services.delete_card_member(db=db, db_card_member=db_card_member)
-#
+
+    # TODO: MAKE AN UPDATE. IDEALLY, SAVE THE USER ID INSTEAD OF NAME SO IT CAN BE DYANMIC. ie, if user changes name
+    # add card activity
+    activity = card_activities['remove_member'].format(current_user.username, db_user.username)
+    await _card_services.add_card_activity(db=db, card_id=card_id, user_id=current_user.id, activity=activity)
+
+
+# card activity
+
+@card_activity_router.get("/{board_id}/{card_id}/get_card_activity", response_model=list[_card_schemas.CardActivity],
+                          dependencies=[board_dependency])
+async def get_card_activity(card_id: int, db: _Session = _Depends(_get_db)):
+    db_card_activity = await _card_services.get_card_activity_by_card(db=db, card_id=card_id)
+    return [_card_schemas.CardActivity.from_orm(db_card_activity) for db_card_activity in db_card_activity]
+
+
+@card_activity_router.post("/{board_id}/{card_id}/add_card_activity", response_model=_card_schemas.CardActivity,
+                           dependencies=[member_board_dependency])
+async def add_card_activity(card_id: int, card_activity_data: _card_schemas.CardActivityCreate,
+                            db: _Session = _Depends(_get_db),
+                            current_user: _user_schemas.User = current_user_dependency):
+    db_card_activity = await _card_services.add_card_activity(db=db, card_id=card_id,
+                                                              user_id=current_user.id,
+                                                              activity=card_activity_data.activity)
+    return _card_schemas.CardActivity.from_orm(db_card_activity)

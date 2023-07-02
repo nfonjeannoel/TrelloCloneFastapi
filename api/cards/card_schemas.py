@@ -40,7 +40,7 @@ class Comment(_BaseComment):
     id: int
     card_id: int
     user_id: int
-    created_date: _dt.date
+    created_datetime: _dt.datetime
 
     class Config:
         orm_mode = True
@@ -80,6 +80,32 @@ class CardMember(_pydantic.BaseModel):
     id: int
     card_id: int
     user_id: int
+
+    class Config:
+        orm_mode = True
+
+
+# class CardActivity(_Base):
+#     __tablename__ = "card_activities"
+#     id = _Column(_Integer, primary_key=True, index=True)
+#     card_id = _Column(_Integer, _ForeignKey("cards.id"))
+#     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
+#     activity = _Column(_String)
+#     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
+
+class CardActivity(_pydantic.BaseModel):
+    id: int
+    card_id: int
+    user_id: int
+    activity: str
+    created_datetime: _dt.datetime
+
+    class Config:
+        orm_mode = True
+
+
+class CardActivityCreate(_pydantic.BaseModel):
+    activity: str
 
     class Config:
         orm_mode = True

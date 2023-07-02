@@ -64,3 +64,11 @@ async def get_users(db: _Session, skip: int = 0, limit: int = 100):
 
 async def get_user_by_id(db: _Session, user_id: int):
     return db.get(_user_models.User, user_id)
+
+
+async def update_username(db: _Session, user_id: int, username: str):
+    db_user = db.get(_user_models.User, user_id)
+    db_user.username = username
+    db.commit()
+    db.refresh(db_user)
+    return db_user

@@ -23,7 +23,7 @@ class Comment(_Base):
     card_id = _Column(_Integer, _ForeignKey("cards.id"))
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
     comment = _Column(_String)
-    created_date = _Column(_String, default=str(_dt.date.today()))
+    created_datetime = _Column(_String, default=str(_dt.datetime.now()))
 
 
 class CheckList(_Base):
@@ -40,3 +40,12 @@ class CardMember(_Base):
     id = _Column(_Integer, primary_key=True, index=True)
     card_id = _Column(_Integer, _ForeignKey("cards.id"))
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
+
+
+class CardActivity(_Base):
+    __tablename__ = "card_activities"
+    id = _Column(_Integer, primary_key=True, index=True)
+    card_id = _Column(_Integer, _ForeignKey("cards.id"))
+    user_id = _Column(_Integer, _ForeignKey("site_users.id"))
+    activity = _Column(_String)
+    created_datetime = _Column(_String, default=str(_dt.datetime.now()))

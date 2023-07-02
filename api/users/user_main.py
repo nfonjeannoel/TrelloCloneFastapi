@@ -48,3 +48,13 @@ async def read_user(user_id: int, db: _Session = _Depends(_get_db)):
     if db_user is None:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
     return _user_schemas.User.from_orm(db_user)
+
+
+# update username
+@router.put("/update_username", response_model=_user_schemas.User)
+async def update_username(user: _user_schemas.UpdateUsername, db: _Session = _Depends(_get_db),
+                          current_user: _user_schemas.User = _Depends(_user_services.get_current_user)):
+    db_user = await _user_services.get_user_by_id(db=db, user_id=current_user.id)
+    if db_user is None:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="User not found")
+    return await _user_services.update_username(db=db, user_id=current_user.id, username=user.username)

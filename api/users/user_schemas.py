@@ -19,6 +19,13 @@ class UserCreate(_UserBase):
         orm_mode = True
 
 
+class UpdateUsername(_pydantic.BaseModel):
+    username: str
+
+    class Config:
+        orm_mode = True
+
+
 class User(_UserBase):
     id: int
     username: str

@@ -3,6 +3,7 @@ from fastapi import APIRouter as _APIRouter, Depends as _Depends, HTTPException 
 from . import board_services as _board_services
 from ..users.user_services import get_current_user as _get_current_user
 from ..users import user_services as _user_services
+from ..cards import card_services as _card_services
 from ..users import user_schemas as _user_schemas
 
 from ..database import get_db as _get_db
@@ -60,6 +61,10 @@ async def remove_member_from_board(board_remove: _board_schemas.BoardRemoveMembe
 
     # remove user from board
     await _board_services.remove_member_from_board(db=db, board_id=board.id, member_id=user_to_remove.id)
+
+    # remove user from all cards in board
+    # TODO: IMPLEMENT THIS
+    # await _card_services.remove_member_from_all_cards_in_board(db=db, board_id=board.id, user_id=user_to_remove.id)
 
 
 # list all members of a board

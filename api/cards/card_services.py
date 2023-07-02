@@ -139,3 +139,20 @@ async def get_card_members_by_card(db: _Session, card_id: int):
 async def get_card_member_by_user(db: _Session, user_id: int, card_id: int):
     return db.query(_card_models.CardMember).filter(_card_models.CardMember.card_id == card_id).filter(
         _card_models.CardMember.user_id == user_id).first()
+
+
+# async def remove_member_from_all_cards_in_board(db: _Session, user_id: int, board_id: int):
+
+
+# card activity
+
+async def get_card_activity_by_card(db: _Session, card_id: int):
+    return db.query(_card_models.CardActivity).filter(_card_models.CardActivity.card_id == card_id).all()
+
+
+async def add_card_activity(db: _Session, card_id: int, user_id: int, activity: str):
+    db_card_activity = _card_models.CardActivity(card_id=card_id, user_id=user_id, activity=activity)
+    db.add(db_card_activity)
+    db.commit()
+    db.refresh(db_card_activity)
+    return db_card_activity
