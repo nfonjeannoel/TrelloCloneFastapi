@@ -19,6 +19,7 @@ class Card(_BaseCard):
     id: int
     list_id: int
     created_date: _dt.date
+    is_active: bool
 
     class Config:
         orm_mode = True

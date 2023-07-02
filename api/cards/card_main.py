@@ -52,6 +52,8 @@ card_activities = {
     "update_card": "{} updated this card",
     "add_member": "{} added {} to this card",
     "remove_member": "{} removed {} from this card",
+    "archive_card": "{} archived this card",
+    "unarchive_card": "{} unarchived this card",
 }
 
 
@@ -104,6 +106,42 @@ async def delete_card(card_id: int, list_data: _list_schemas.List = member_list_
     if not db_card:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
     db_card = await _card_services.delete_card(db=db, db_card=db_card)
+
+
+# archive card
+@card_router.put("/{board_id}/{list_id}/{card_id}/archive_card", response_model=_card_schemas.Card)
+async def archive_card(card_id: int, list_data: _list_schemas.List = member_list_dependency,
+                       db: _Session = _Depends(_get_db)):
+    db_card = await _card_services.get_card_by_id(db=db, card_id=card_id, list_id=list_data.id)
+    if not db_card:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
+    db_card = await _card_services.archive_card(db=db, db_card=db_card)
+
+    # add card activity
+    activity = card_activities["archive_card"].format(db_card.user.username)
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=db_card.user_id,
+                                           activity=activity)
+
+    return _card_schemas.Card.from_orm(db_card)
+
+
+# unarchive card
+@card_router.put("/{board_id}/{list_id}/{card_id}/unarchive_card", response_model=_card_schemas.Card)
+async def unarchive_card(card_id: int, list_data: _list_schemas.List = member_list_dependency,
+                         db: _Session = _Depends(_get_db)):
+    db_card = await _card_services.get_card_by_id(db=db, card_id=card_id, list_id=list_data.id)
+    if not db_card:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
+    db_card = await _card_services.unarchive_card(db=db, db_card=db_card)
+
+    # add card activity
+    activity = card_activities["unarchive_card"].format(db_card.user.username)
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=db_card.user_id,
+                                           activity=activity)
+
+    return _card_schemas.Card.from_orm(db_card)
+
+
 
 
 # comments

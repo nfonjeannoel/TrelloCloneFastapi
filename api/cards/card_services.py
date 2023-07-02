@@ -19,6 +19,22 @@ async def create_card(db: _Session, card_data: _card_schemas.CardCreate, list_id
     return db_card
 
 
+async def archive_card(db: _Session, db_card: _card_models.Card):
+    db_card.is_active = False
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
+
+
+async def unarchive_card(db: _Session, db_card: _card_models.Card):
+    db_card.is_active = True
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
+
+
 async def get_cards_by_list(db: _Session, list_id: int):
     return db.query(_card_models.Card).filter(_card_models.Card.list_id == list_id).all()
 
