@@ -13,8 +13,8 @@ class Card(_Base):
     created_date = _Column(_String, default=str(_dt.date.today()))
 
     is_active = _Column(_Boolean, default=True)
-    # due_date = _Column(_String)
-    # completed_date = _Column(_String)
+    due_date = _Column(_String, nullable=True)
+    reminder_datetime = _Column(_String, nullable=True)
 
 
 class Comment(_Base):
@@ -24,6 +24,7 @@ class Comment(_Base):
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
     comment = _Column(_String)
     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
+    # TODO: UPDATE DATE FIELDS TO USE DATE IN ALL MODELS AND SCHEMAS
 
 
 class CheckList(_Base):
@@ -56,3 +57,12 @@ class CardLabel(_Base):
     id = _Column(_Integer, primary_key=True, index=True)
     card_id = _Column(_Integer, _ForeignKey("cards.id"))
     label_id = _Column(_Integer, _ForeignKey("core_labels.id"))
+
+
+class CardAttachment(_Base):
+    __tablename__ = "card_attachments"
+    id = _Column(_Integer, primary_key=True, index=True)
+    card_id = _Column(_Integer, _ForeignKey("cards.id"))
+    uploaded_date = _Column(_String, default=str(_dt.date.today()))
+    file_name = _Column(_String)
+    location = _Column(_String)

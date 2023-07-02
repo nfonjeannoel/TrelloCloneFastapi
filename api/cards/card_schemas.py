@@ -13,6 +13,9 @@ class CardCreate(_BaseCard):
 
 class CardUpdate(_BaseCard):
     list_id: int
+    is_active: bool
+    due_date: _dt.date
+    reminder_datetime: _dt.datetime | None
 
 
 class Card(_BaseCard):
@@ -20,9 +23,15 @@ class Card(_BaseCard):
     list_id: int
     created_date: _dt.date
     is_active: bool
+    due_date: _dt.date | None
+    reminder_datetime: _dt.datetime | None
 
     class Config:
         orm_mode = True
+
+
+class CardDueDate(_pydantic.BaseModel):
+    due_date: _dt.date
 
 
 class _BaseComment(_pydantic.BaseModel):
@@ -104,12 +113,6 @@ class CardActivityCreate(_pydantic.BaseModel):
         orm_mode = True
 
 
-# class CardLabel(_Base):
-#     __tablename__ = "card_labels"
-#     id = _Column(_Integer, primary_key=True, index=True)
-#     card_id = _Column(_Integer, _ForeignKey("cards.id"))
-#     label_id = _Column(_Integer, _ForeignKey("core_labels.id"))
-
 
 class CardLabel(_pydantic.BaseModel):
     id: int
@@ -119,3 +122,15 @@ class CardLabel(_pydantic.BaseModel):
     class Config:
         orm_mode = True
 
+
+
+
+class CardAttachment(_pydantic.BaseModel):
+    id: int
+    card_id: int
+    uploaded_date: _dt.date
+    file_name: str
+    location: str
+
+    class Config:
+        orm_mode = True

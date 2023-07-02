@@ -1,5 +1,7 @@
+import shutil
+
 from fastapi import APIRouter as _APIRouter, Depends as _Depends, HTTPException as _HTTPException, status as _status, \
-    security as _security
+    security as _security, UploadFile as _UploadFile
 from . import card_services as _card_services
 from ..users.user_services import get_current_user as _get_current_user
 from ..boards.board_services import get_current_board as _get_current_board
@@ -15,6 +17,7 @@ from . import card_schemas as _card_schemas
 from sqlalchemy.orm import Session as _Session
 from ..boards import board_schemas as _board_schemas
 from ..lists import list_schemas as _list_schemas
+import datetime as _dt
 
 card_router = _APIRouter(
     prefix="/cards",
@@ -46,6 +49,11 @@ card_label_router = _APIRouter(
     tags=["card_labels"],
 )
 
+card_attachment_router = _APIRouter(
+    prefix="/card_attachments",
+    tags=["card_attachments"],
+)
+
 current_user_dependency = _Depends(_get_current_user)
 board_dependency = _Depends(_get_current_board)
 member_board_dependency = _Depends(_get_member_board)
@@ -59,6 +67,8 @@ card_activities = {
     "remove_member": "{} removed {} from this card",
     "archive_card": "{} archived this card",
     "unarchive_card": "{} unarchived this card",
+    "set_due_date": "{} set the due date for this card to {}",
+    "add_attachment": "{} attached file '{}' to this card",
 }
 
 
@@ -111,6 +121,26 @@ async def delete_card(card_id: int, list_data: _list_schemas.List = member_list_
     if not db_card:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
     db_card = await _card_services.delete_card(db=db, db_card=db_card)
+
+
+# set due date
+@card_router.put("/{board_id}/{list_id}/{card_id}/set_due_date", response_model=_card_schemas.Card)
+async def set_due_date(card_id: int, card_data: _card_schemas.CardDueDate,
+                       list_data: _list_schemas.List = member_list_dependency,
+                       current_user: _user_schemas.User = current_user_dependency,
+                       db: _Session = _Depends(_get_db)):
+    db_card = await _card_services.get_card_by_id(db=db, card_id=card_id, list_id=list_data.id)
+    if not db_card:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
+    db_card = await _card_services.set_due_date(db=db, db_card=db_card, card_data=card_data)
+
+    # add card activity
+    activity = card_activities["set_due_date"].format(current_user.username, card_data.due_date)
+
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=current_user.id,
+                                           activity=activity)
+
+    return _card_schemas.Card.from_orm(db_card)
 
 
 # archive card
@@ -360,3 +390,26 @@ async def delete_card_label(card_id: int, label_id: int, db: _Session = _Depends
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
     db_card_label = await _card_services.delete_card_label(db=db, db_card_label=db_card_label)
     return _card_schemas.CardLabel.from_orm(db_card_label)
+
+
+# card attachment
+
+# create an endpoint to upload files and pictures. use UploadFile from fastapi
+
+@card_attachment_router.post("/{board_id}/{card_id}/add_card_attachment",
+                             response_model=_card_schemas.CardAttachment,
+                             dependencies=[member_board_dependency])
+async def add_card_attachment(card_id: int, file: _UploadFile, db: _Session = _Depends(_get_db),
+                              current_user: _user_schemas.User = current_user_dependency):
+    # write file to storage and get path
+    # TODO: SAVE FILE TO STORAGE
+    # path = await _card_services.write_file_to_storage(file=file, folder_name='card_attachments')
+    db_card_attachment = await _card_services.add_card_attachment(db=db, card_id=card_id, filename=file.filename,
+                                                                  uploaded_date=str(_dt.date.today()),
+                                                                  location="attachment/location")
+
+    # add card activity
+    activity = card_activities['add_attachment'].format(current_user.username, file.filename)
+
+    await _card_services.add_card_activity(db=db, card_id=card_id, user_id=current_user.id, activity=activity)
+    return _card_schemas.CardAttachment.from_orm(db_card_attachment)

@@ -59,6 +59,14 @@ async def delete_card(db: _Session, db_card: _card_models.Card):
     db.commit()
 
 
+async def set_due_date(db: _Session, db_card: _card_models.Card, card_data: _card_schemas.CardDueDate):
+    db_card.due_date = str(card_data.due_date)
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
+
+
 # comments
 
 async def create_comment(db: _Session, comment_data: _card_schemas.CommentCreate, card_id: int, user_id: int):
@@ -196,3 +204,16 @@ async def get_card_label_by_label(db: _Session, card_id: int, label_id: int):
 async def delete_card_label(db: _Session, db_card_label: _card_models.CardLabel):
     db.delete(db_card_label)
     db.commit()
+
+
+async def write_file_to_storage(file, path: str):
+    pass
+
+
+async def add_card_attachment(db: _Session, card_id: int, filename: str, uploaded_date: str, location: str):
+    db_file = _card_models.CardAttachment(card_id=card_id, uploaded_date=uploaded_date, file_name=filename,
+                                          location=location)
+    db.add(db_file)
+    db.commit()
+    db.refresh(db_file)
+    return db_file

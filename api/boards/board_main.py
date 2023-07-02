@@ -21,6 +21,8 @@ board_dependency = _Depends(_get_current_board)
 member_board_dependency = _Depends(_get_member_board)
 
 
+# TODO: UPDATE BOARD ENDPOINTS TO USE MEMBER BOARD DEPENDENCY
+
 # endpoint to add member to board
 @router.post("/add_member/{board_id}", response_model=_board_schemas.Board)
 async def add_member_to_board(board_add: _board_schemas.BoardAddMember, db: _Session = _Depends(_get_db),
@@ -135,12 +137,9 @@ async def read_user_board(board_id: int, db: _Session = _Depends(_get_db),
                                  detail="You are not authorized to access this board")
 
 
-@router.put("/{board_id}", response_model=_board_schemas.Board)
+@router.put("/{board_id}", response_model=_board_schemas.Board, dependencies=[current_user_dependency])
 async def update_user_board(board_data: _board_schemas.BoardUpdate, db: _Session = _Depends(_get_db),
-                            board=_Depends(_board_services.get_current_board),
-                            current_user: _user_schemas.User = current_user_dependency):
-    if not await _board_services.user_is_board_member(db=db, board_id=board.id, user_id=current_user.id):
-        raise _HTTPException(status_code=_status.HTTP_401_UNAUTHORIZED, detail="You are not a member of this board")
+                            board=member_board_dependency):
     board = await _board_services.update_board(db=db, board=board_data, db_board=board)
     return _board_schemas.Board.from_orm(board)
 
