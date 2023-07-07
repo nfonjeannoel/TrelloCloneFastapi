@@ -11,6 +11,18 @@ from ..users.user_services import get_current_user as _get_current_user
 from ..users import user_schemas as _user_schemas
 
 
+async def get_current_card(card_id: int, db: _Session = _Depends(_get_db)):
+    card = await get_card_with_id(db=db, card_id=card_id)
+    if not card:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
+
+    return card
+
+
+async def get_card_with_id(db: _Session, card_id: int):
+    return db.query(_card_models.Card).filter(_card_models.Card.id == card_id).first()
+
+
 async def create_card(db: _Session, card_data: _card_schemas.CardCreate, list_id: int):
     db_card = _card_models.Card(**card_data.dict(), list_id=list_id)
     db.add(db_card)

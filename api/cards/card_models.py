@@ -18,6 +18,12 @@ class Card(_Base):
     reminder_datetime = _Column(_String, nullable=True)
 
     list = _relationship("List", back_populates="cards")
+    comments = _relationship("Comment", back_populates="card")
+    check_lists = _relationship("CheckList", back_populates="card")
+    card_members = _relationship("CardMember", back_populates="card")
+    card_activities = _relationship("CardActivity", back_populates="card")
+    labels = _relationship("CardLabel", back_populates="card")
+    attachments = _relationship("CardAttachment", back_populates="card")
 
 
 class Comment(_Base):
@@ -29,6 +35,8 @@ class Comment(_Base):
     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
     # TODO: UPDATE DATE FIELDS TO USE DATE IN ALL MODELS AND SCHEMAS
 
+    card = _relationship("Card", back_populates="comments")
+
 
 class CheckList(_Base):
     __tablename__ = "check_lists"
@@ -38,12 +46,18 @@ class CheckList(_Base):
     is_checked = _Column(_Integer, default=False)
     position = _Column(_Integer, default=0)
 
+    card = _relationship("Card", back_populates="check_lists")
+
 
 class CardMember(_Base):
     __tablename__ = "card_members"
     id = _Column(_Integer, primary_key=True, index=True)
     card_id = _Column(_Integer, _ForeignKey("cards.id"))
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
+
+    # TODO: ADD SOME DATA ABOUT THE USER
+
+    card = _relationship("Card", back_populates="card_members")
 
 
 class CardActivity(_Base):
@@ -54,12 +68,16 @@ class CardActivity(_Base):
     activity = _Column(_String)
     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
 
+    card = _relationship("Card", back_populates="card_activities")
+
 
 class CardLabel(_Base):
     __tablename__ = "card_labels"
     id = _Column(_Integer, primary_key=True, index=True)
     card_id = _Column(_Integer, _ForeignKey("cards.id"))
     label_id = _Column(_Integer, _ForeignKey("core_labels.id"))
+
+    card = _relationship("Card", back_populates="labels")
 
 
 class CardAttachment(_Base):
@@ -69,3 +87,5 @@ class CardAttachment(_Base):
     uploaded_date = _Column(_String, default=str(_dt.date.today()))
     file_name = _Column(_String)
     location = _Column(_String)
+
+    card = _relationship("Card", back_populates="attachments")

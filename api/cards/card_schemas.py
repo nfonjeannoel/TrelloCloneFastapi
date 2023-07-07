@@ -131,3 +131,16 @@ class CardAttachment(_pydantic.BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class FullCardMember(Card):
+    card_members: list[CardMember] | None
+
+
+class FullCard(Card):
+    comments: list[Comment] | None
+    check_lists: list[CheckList] | None
+    card_members: list[CardMember] | None
+    card_activities: list[CardActivity] | None
+    labels: list[CardLabel] | None
+    attachments: list[CardAttachment] | None

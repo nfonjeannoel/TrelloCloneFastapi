@@ -1,5 +1,5 @@
 import pydantic as _pydantic
-from ..cards.card_schemas import Card as _Card
+from ..cards.card_schemas import FullCardMember as _FullCardMember
 
 
 class _BaseList(_pydantic.BaseModel):
@@ -19,7 +19,7 @@ class List(_BaseList):
     position: int
     board_id: int
 
-    cards: list[_Card] | None
+    cards: list[_FullCardMember] | None
 
     class Config:
         orm_mode = True

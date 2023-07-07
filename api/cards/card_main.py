@@ -59,6 +59,7 @@ board_dependency = _Depends(_get_current_board)
 member_board_dependency = _Depends(_get_member_board)
 list_dependency = _Depends(_get_current_list)
 member_list_dependency = _Depends(_get_member_list)
+card_dependency = _Depends(_card_services.get_current_card)
 
 card_activities = {
     "create_card": "{} created this card",
@@ -71,6 +72,13 @@ card_activities = {
     "add_attachment": "{} attached file '{}' to this card",
     "delete_attachment": "{} deleted attachment '{}' from this card",
 }
+
+
+@card_router.get("/{board_id}/{card_id}/get_full_card", response_model=_card_schemas.FullCard,
+                 dependencies=[board_dependency])
+async def get_full_card(card: _card_schemas.FullCard = card_dependency,
+                        db: _Session = _Depends(_get_db)):
+    return card
 
 
 @card_router.post("/{board_id}/{list_id}/create_card", response_model=_card_schemas.Card)
@@ -402,7 +410,7 @@ async def delete_card_label(card_id: int, label_id: int, db: _Session = _Depends
 @card_attachment_router.post("/{board_id}/{card_id}/add_card_attachment",
                              response_model=_card_schemas.CardAttachment,
                              dependencies=[member_board_dependency])
-async def add_card_attachment(card_id: int, file: _UploadFile , db: _Session = _Depends(_get_db),
+async def add_card_attachment(card_id: int, file: _UploadFile, db: _Session = _Depends(_get_db),
                               current_user: _user_schemas.User = current_user_dependency):
     # write file to storage and get path
     # TODO: SAVE FILE TO STORAGE
