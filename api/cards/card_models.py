@@ -2,6 +2,7 @@ from api.database import Base as _Base
 from sqlalchemy import Column as _Column, Integer as _Integer, String as _String, ForeignKey as _ForeignKey, \
     ForeignKeyConstraint, Boolean as _Boolean
 import datetime as _dt
+from sqlalchemy.orm import relationship as _relationship
 
 
 class Card(_Base):
@@ -15,6 +16,8 @@ class Card(_Base):
     is_active = _Column(_Boolean, default=True)
     due_date = _Column(_String, nullable=True)
     reminder_datetime = _Column(_String, nullable=True)
+
+    list = _relationship("List", back_populates="cards")
 
 
 class Comment(_Base):

@@ -45,6 +45,7 @@ async def get_member_board(board_id: int, db: _Session = _Depends(_get_db),
         raise _HTTPException(status_code=_status.HTTP_403_FORBIDDEN, detail="User is not a member of this board")
 
 
+
 async def create_board(db: _Session, board: _board_schemas.BoardCreate, owner_id: int):
     db_board = _board_models.Board(**board.dict(), owner_id=owner_id)
     db.add(db_board)

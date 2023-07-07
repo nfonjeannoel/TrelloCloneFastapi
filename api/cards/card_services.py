@@ -217,3 +217,17 @@ async def add_card_attachment(db: _Session, card_id: int, filename: str, uploade
     db.commit()
     db.refresh(db_file)
     return db_file
+
+
+async def get_card_attachments_by_card(db: _Session, card_id: int):
+    return db.query(_card_models.CardAttachment).filter(_card_models.CardAttachment.card_id == card_id).all()
+
+
+async def get_card_attachment_by_id(db: _Session, attachment_id: int, card_id: int):
+    return db.query(_card_models.CardAttachment).filter(_card_models.CardAttachment.card_id == card_id).filter(
+        _card_models.CardAttachment.id == attachment_id).first()
+
+
+async def delete_card_attachment(db: _Session, db_card_attachment: _card_models.CardAttachment):
+    db.delete(db_card_attachment)
+    db.commit()

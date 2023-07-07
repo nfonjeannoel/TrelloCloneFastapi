@@ -69,6 +69,7 @@ card_activities = {
     "unarchive_card": "{} unarchived this card",
     "set_due_date": "{} set the due date for this card to {}",
     "add_attachment": "{} attached file '{}' to this card",
+    "delete_attachment": "{} deleted attachment '{}' from this card",
 }
 
 
@@ -146,6 +147,7 @@ async def set_due_date(card_id: int, card_data: _card_schemas.CardDueDate,
 # archive card
 @card_router.put("/{board_id}/{list_id}/{card_id}/archive_card", response_model=_card_schemas.Card)
 async def archive_card(card_id: int, list_data: _list_schemas.List = member_list_dependency,
+                       current_user: _user_schemas.User = current_user_dependency,
                        db: _Session = _Depends(_get_db)):
     db_card = await _card_services.get_card_by_id(db=db, card_id=card_id, list_id=list_data.id)
     if not db_card:
@@ -153,8 +155,8 @@ async def archive_card(card_id: int, list_data: _list_schemas.List = member_list
     db_card = await _card_services.archive_card(db=db, db_card=db_card)
 
     # add card activity
-    activity = card_activities["archive_card"].format(db_card.user.username)
-    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=db_card.user_id,
+    activity = card_activities["archive_card"].format(current_user.username)
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=current_user.id,
                                            activity=activity)
 
     return _card_schemas.Card.from_orm(db_card)
@@ -163,6 +165,7 @@ async def archive_card(card_id: int, list_data: _list_schemas.List = member_list
 # unarchive card
 @card_router.put("/{board_id}/{list_id}/{card_id}/unarchive_card", response_model=_card_schemas.Card)
 async def unarchive_card(card_id: int, list_data: _list_schemas.List = member_list_dependency,
+                         current_user: _user_schemas.User = current_user_dependency,
                          db: _Session = _Depends(_get_db)):
     db_card = await _card_services.get_card_by_id(db=db, card_id=card_id, list_id=list_data.id)
     if not db_card:
@@ -170,8 +173,8 @@ async def unarchive_card(card_id: int, list_data: _list_schemas.List = member_li
     db_card = await _card_services.unarchive_card(db=db, db_card=db_card)
 
     # add card activity
-    activity = card_activities["unarchive_card"].format(db_card.user.username)
-    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=db_card.user_id,
+    activity = card_activities["unarchive_card"].format(current_user.username)
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=current_user.id,
                                            activity=activity)
 
     return _card_schemas.Card.from_orm(db_card)
@@ -399,7 +402,7 @@ async def delete_card_label(card_id: int, label_id: int, db: _Session = _Depends
 @card_attachment_router.post("/{board_id}/{card_id}/add_card_attachment",
                              response_model=_card_schemas.CardAttachment,
                              dependencies=[member_board_dependency])
-async def add_card_attachment(card_id: int, file: _UploadFile, db: _Session = _Depends(_get_db),
+async def add_card_attachment(card_id: int, file: _UploadFile , db: _Session = _Depends(_get_db),
                               current_user: _user_schemas.User = current_user_dependency):
     # write file to storage and get path
     # TODO: SAVE FILE TO STORAGE
@@ -413,3 +416,28 @@ async def add_card_attachment(card_id: int, file: _UploadFile, db: _Session = _D
 
     await _card_services.add_card_activity(db=db, card_id=card_id, user_id=current_user.id, activity=activity)
     return _card_schemas.CardAttachment.from_orm(db_card_attachment)
+
+
+@card_attachment_router.get("/{board_id}/{card_id}/get_card_attachments",
+                            response_model=list[_card_schemas.CardAttachment],
+                            dependencies=[board_dependency])
+async def get_card_attachments(card_id: int, db: _Session = _Depends(_get_db)):
+    db_card_attachments = await _card_services.get_card_attachments_by_card(db=db, card_id=card_id)
+    return [_card_schemas.CardAttachment.from_orm(db_card_attachment) for db_card_attachment in db_card_attachments]
+
+
+@card_attachment_router.delete("/{board_id}/{card_id}/{attachment_id}/delete_card_attachment",
+                               status_code=_status.HTTP_204_NO_CONTENT,
+                               dependencies=[member_board_dependency])
+async def delete_card_attachment(card_id: int, attachment_id: int, db: _Session = _Depends(_get_db),
+                                 current_user: _user_schemas.User = current_user_dependency):
+    db_card_attachment = await _card_services.get_card_attachment_by_id(db=db, card_id=card_id,
+                                                                        attachment_id=attachment_id)
+    if not db_card_attachment:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+    db_card_attachment = await _card_services.delete_card_attachment(db=db, db_card_attachment=db_card_attachment)
+
+    # add card activity
+    activity = card_activities['delete_attachment'].format(current_user.username, db_card_attachment.filename)
+
+    await _card_services.add_card_activity(db=db, card_id=card_id, user_id=current_user.id, activity=activity)

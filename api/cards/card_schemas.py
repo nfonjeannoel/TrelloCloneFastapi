@@ -113,7 +113,6 @@ class CardActivityCreate(_pydantic.BaseModel):
         orm_mode = True
 
 
-
 class CardLabel(_pydantic.BaseModel):
     id: int
     card_id: int
@@ -121,8 +120,6 @@ class CardLabel(_pydantic.BaseModel):
 
     class Config:
         orm_mode = True
-
-
 
 
 class CardAttachment(_pydantic.BaseModel):

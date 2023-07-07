@@ -1,5 +1,6 @@
 import datetime as _dt
 import pydantic as _pydantic
+from ..lists.list_schemas import List as _List
 
 
 class _BaseBoard(_pydantic.BaseModel):
@@ -51,8 +52,6 @@ class BoardMember(_pydantic.BaseModel):
         orm_mode = True
 
 
-
-
 class _BaseBoardLabel(_pydantic.BaseModel):
     name: str
     color: str
@@ -72,3 +71,7 @@ class BoardLabel(_BaseBoardLabel):
 
     class Config:
         orm_mode = True
+
+
+class FullBoard(Board):
+    lists: list[_List] | None

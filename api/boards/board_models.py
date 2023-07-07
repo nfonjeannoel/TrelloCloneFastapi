@@ -1,6 +1,7 @@
 from api.database import Base as _Base
 from sqlalchemy import Column as _Column, Integer as _Integer, String as _String, ForeignKey as _ForeignKey
 import datetime as _dt
+from sqlalchemy.orm import relationship as _relationship
 
 
 class Board(_Base):
@@ -10,6 +11,8 @@ class Board(_Base):
     name = _Column(_String, index=True)
     is_public = _Column(_Integer, default=True)
     created_date = _Column(_String, default=str(_dt.date.today()))
+
+    lists = _relationship("List", back_populates="board")
 
 
 class BoardMember(_Base):
