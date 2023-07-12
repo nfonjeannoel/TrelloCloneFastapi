@@ -1,6 +1,8 @@
 import datetime as _dt
 import pydantic as _pydantic
 
+from api.users.user_schemas import User as _User
+
 
 class _BaseCard(_pydantic.BaseModel):
     title: str
@@ -90,6 +92,7 @@ class CardMember(_pydantic.BaseModel):
     id: int
     card_id: int
     user_id: int
+    user: _User | None
 
     class Config:
         orm_mode = True

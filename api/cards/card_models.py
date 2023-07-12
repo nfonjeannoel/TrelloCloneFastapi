@@ -58,6 +58,7 @@ class CardMember(_Base):
     # TODO: ADD SOME DATA ABOUT THE USER
 
     card = _relationship("Card", back_populates="card_members")
+    user = _relationship("User", back_populates="cards")
 
 
 class CardActivity(_Base):

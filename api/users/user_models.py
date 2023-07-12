@@ -13,6 +13,7 @@ class User(_Base):
     email = _Column(_String, unique=True, index=True)
     signup_date = _Column(_String, default=str(_dt.date.today()))
 
+    cards = _relationship("CardMember", back_populates="user")
 
     def verify_password(self, password: str):
         return _bcrypt.verify(password, self.hashed_password)
