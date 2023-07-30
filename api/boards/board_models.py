@@ -13,6 +13,7 @@ class Board(_Base):
     created_date = _Column(_String, default=str(_dt.date.today()))
 
     lists = _relationship("List", back_populates="board")
+    board_members = _relationship("BoardMember", back_populates="board")
 
 
 class BoardMember(_Base):
@@ -20,6 +21,9 @@ class BoardMember(_Base):
     id = _Column(_Integer, primary_key=True, index=True)
     user_id = _Column(_Integer, _ForeignKey("site_users.id"))
     board_id = _Column(_Integer, _ForeignKey("boards.id"))
+
+    board = _relationship("Board", back_populates="board_members")
+    user = _relationship("User", back_populates="board_members")
 
 
 # TODO: ADD DEFAULT LABELS TO BOARD
@@ -31,6 +35,7 @@ class CoreLabel(_Base):
     color = _Column(_String)
 
 
+
 class BoardLabel(_Base):
     # applies to a specific board
     __tablename__ = "board_labels"
@@ -38,3 +43,5 @@ class BoardLabel(_Base):
     board_id = _Column(_Integer, _ForeignKey("boards.id"))
     name = _Column(_String)
     color = _Column(_String)
+
+    card_label = _relationship("CardLabel", back_populates="board_label")

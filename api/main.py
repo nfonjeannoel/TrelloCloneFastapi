@@ -5,8 +5,24 @@ from api.lists.list_main import router as _lists_router
 from api.cards.card_main import card_router as _cards_router, comments_router as _comments_router, \
     checklists_router as _check_lists_router, card_member_router as _card_member_router, card_activity_router as \
     _card_activity_router, card_label_router as _card_label_router, card_attachment_router as _card_attachment_router
+from fastapi.middleware.cors import CORSMiddleware as _CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    # "http://localhost",
+    # "http://localhost:8080",
+    # "http://127.0.0.1:5173",
+    "*"
+]
+
+app.add_middleware(
+    _CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(_users_router)
 app.include_router(_boards_router)

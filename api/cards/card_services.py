@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session as _Session
 from . import card_models as _card_models
+from ..lists import list_models as _list_models
 import email_validator as _email_check
 import passlib.hash as _hash
 from fastapi import HTTPException as _HTTPException, status as _status, Depends as _Depends
@@ -20,6 +21,12 @@ async def get_current_card(card_id: int, db: _Session = _Depends(_get_db)):
 
 
 async def get_card_with_id(db: _Session, card_id: int):
+    """
+    Get card by id only
+    :param db:
+    :param card_id:
+    :return:
+    """
     return db.query(_card_models.Card).filter(_card_models.Card.id == card_id).first()
 
 
@@ -52,6 +59,13 @@ async def get_cards_by_list(db: _Session, list_id: int):
 
 
 async def get_card_by_id(db: _Session, card_id: int, list_id: int):
+    """
+    get card for a specific list by id
+    :param db:
+    :param card_id:
+    :param list_id:
+    :return:
+    """
     return db.query(_card_models.Card).filter(_card_models.Card.list_id == list_id).filter(
         _card_models.Card.id == card_id).first()
 
@@ -66,9 +80,27 @@ async def update_card(db: _Session, card_data: _card_schemas.CardUpdate, db_card
     return db_card
 
 
+async def update_card_basics(db: _Session, card_data: _card_schemas.CardUpdateTitle, db_card: _card_models.Card):
+    update_data = card_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_card, key, value)
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
+
+
 async def delete_card(db: _Session, db_card: _card_models.Card):
     db.delete(db_card)
     db.commit()
+
+
+async def update_card_list(db: _Session, db_card: _card_models.Card, db_list: _list_models.List):
+    db_card.list_id = db_list.id
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
 
 
 async def set_due_date(db: _Session, db_card: _card_models.Card, card_data: _card_schemas.CardDueDate):
@@ -211,6 +243,11 @@ async def get_card_labels_by_card(db: _Session, card_id: int):
 async def get_card_label_by_label(db: _Session, card_id: int, label_id: int):
     return db.query(_card_models.CardLabel).filter(_card_models.CardLabel.card_id == card_id).filter(
         _card_models.CardLabel.label_id == label_id).first()
+
+
+async def get_card_label_by_id(db: _Session, card_label_id: int, card_id: int):
+    return db.query(_card_models.CardLabel).filter(_card_models.CardLabel.card_id == card_id).filter(
+        _card_models.CardLabel.id == card_label_id).first()
 
 
 async def delete_card_label(db: _Session, db_card_label: _card_models.CardLabel):

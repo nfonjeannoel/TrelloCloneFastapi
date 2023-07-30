@@ -36,6 +36,7 @@ class Comment(_Base):
     # TODO: UPDATE DATE FIELDS TO USE DATE IN ALL MODELS AND SCHEMAS
 
     card = _relationship("Card", back_populates="comments")
+    user = _relationship("User", back_populates="comments")
 
 
 class CheckList(_Base):
@@ -76,9 +77,10 @@ class CardLabel(_Base):
     __tablename__ = "card_labels"
     id = _Column(_Integer, primary_key=True, index=True)
     card_id = _Column(_Integer, _ForeignKey("cards.id"))
-    label_id = _Column(_Integer, _ForeignKey("core_labels.id"))
+    label_id = _Column(_Integer, _ForeignKey("board_labels.id"))
 
     card = _relationship("Card", back_populates="labels")
+    board_label = _relationship("BoardLabel", back_populates="card_label")
 
 
 class CardAttachment(_Base):

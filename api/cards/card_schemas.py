@@ -20,6 +20,11 @@ class CardUpdate(_BaseCard):
     reminder_datetime: _dt.datetime | None
 
 
+class CardUpdateTitle(_pydantic.BaseModel):
+    title: str | None
+    description: str | None
+
+
 class Card(_BaseCard):
     id: int
     list_id: int
@@ -56,6 +61,10 @@ class Comment(_BaseComment):
 
     class Config:
         orm_mode = True
+
+
+class FullComment(Comment):
+    user: _User | None
 
 
 class _BaseCheckList(_pydantic.BaseModel):
@@ -125,6 +134,11 @@ class CardLabel(_pydantic.BaseModel):
         orm_mode = True
 
 
+class FullCardLabel(CardLabel):
+    from api.boards.board_schemas import BoardLabel
+    board_label: BoardLabel | None
+
+
 class CardAttachment(_pydantic.BaseModel):
     id: int
     card_id: int
@@ -141,9 +155,9 @@ class FullCardMember(Card):
 
 
 class FullCard(Card):
-    comments: list[Comment] | None
+    comments: list[FullComment] | None
     check_lists: list[CheckList] | None
     card_members: list[CardMember] | None
     card_activities: list[CardActivity] | None
-    labels: list[CardLabel] | None
+    labels: list[FullCardLabel] | None
     attachments: list[CardAttachment] | None

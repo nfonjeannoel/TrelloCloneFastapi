@@ -123,6 +123,24 @@ async def update_card(card_data: _card_schemas.CardUpdate, card_id: int,
     return _card_schemas.Card.from_orm(db_card)
 
 
+# update card title
+@card_router.put("/{board_id}/{list_id}/{card_id}/update_card_basics", response_model=_card_schemas.Card,
+                 dependencies=[member_list_dependency])
+async def update_card_basics(card_data: _card_schemas.CardUpdateTitle, card_id: int,
+                             list_data: _list_schemas.List = member_list_dependency,
+                             current_user: _user_schemas.User = current_user_dependency,
+                             db: _Session = _Depends(_get_db)):
+    db_card = await _card_services.get_card_by_id(db=db, card_id=card_id, list_id=list_data.id)
+    if not db_card:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
+    db_card = await _card_services.update_card_basics(db=db, card_data=card_data, db_card=db_card)
+    # add card activity
+    activity = card_activities["update_card"].format(current_user.username)
+    await _card_services.add_card_activity(db=db, card_id=db_card.id, user_id=current_user.id,
+                                           activity=activity)
+    return _card_schemas.Card.from_orm(db_card)
+
+
 @card_router.delete("/{board_id}/{list_id}/{card_id}/delete_card", status_code=_status.HTTP_204_NO_CONTENT)
 async def delete_card(card_id: int, list_data: _list_schemas.List = member_list_dependency,
                       db: _Session = _Depends(_get_db)):
@@ -130,6 +148,20 @@ async def delete_card(card_id: int, list_data: _list_schemas.List = member_list_
     if not db_card:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
     db_card = await _card_services.delete_card(db=db, db_card=db_card)
+
+
+# update card list
+@card_router.put("/{board_id}/{card_id}/{list_id}", response_model=_card_schemas.Card,
+                 dependencies=[member_board_dependency])
+async def update_card_list(card_id: int, list_id: int, db: _Session = _Depends(_get_db)):
+    db_card = await _card_services.get_card_with_id(db=db, card_id=card_id)
+    if not db_card:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Card not found")
+    db_list = await _list_services.get_list_by_id(db=db, list_id=list_id)
+    if not db_list:
+        raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="List not found")
+    db_card = await _card_services.update_card_list(db=db, db_card=db_card, db_list=db_list)
+    return _card_schemas.Card.from_orm(db_card)
 
 
 # set due date
@@ -191,14 +223,14 @@ async def unarchive_card(card_id: int, list_data: _list_schemas.List = member_li
 # comments
 
 
-@comments_router.post("/{board_id}/{list_id}/{card_id}/create_comment", response_model=_card_schemas.Comment,
+@comments_router.post("/{board_id}/{list_id}/{card_id}/create_comment", response_model=_card_schemas.FullComment,
                       dependencies=[member_list_dependency])
 async def create_comment(comment_data: _card_schemas.CommentCreate, card_id: int,
                          current_user: _user_schemas.User = current_user_dependency,
                          db: _Session = _Depends(_get_db)):
     db_comment = await _card_services.create_comment(db=db, comment_data=comment_data, card_id=card_id,
                                                      user_id=current_user.id)
-    return _card_schemas.Comment.from_orm(db_comment)
+    return _card_schemas.FullComment.from_orm(db_comment)
 
 
 @comments_router.get("/{board_id}/{list_id}/{card_id}/get_comments", response_model=list[_card_schemas.Comment],
@@ -217,7 +249,7 @@ async def get_comment(comment_id: int, card_id: int, db: _Session = _Depends(_ge
 
 
 @comments_router.put("/{board_id}/{list_id}/{card_id}/{comment_id}/update_comment",
-                     response_model=_card_schemas.Comment,
+                     response_model=_card_schemas.FullComment,
                      dependencies=[member_list_dependency])
 async def update_comment(comment_data: _card_schemas.CommentUpdate, comment_id: int, card_id: int,
                          current_user: _user_schemas.User = current_user_dependency,
@@ -228,7 +260,7 @@ async def update_comment(comment_data: _card_schemas.CommentUpdate, comment_id: 
     if db_comment.user_id != current_user.id:
         raise _HTTPException(status_code=_status.HTTP_403_FORBIDDEN, detail="You can't update this comment")
     db_comment = await _card_services.update_comment(db=db, comment_data=comment_data, db_comment=db_comment)
-    return _card_schemas.Comment.from_orm(db_comment)
+    return _card_schemas.FullComment.from_orm(db_comment)
 
 
 @comments_router.delete("/{board_id}/{list_id}/{card_id}/{comment_id}/delete_comment",
@@ -375,14 +407,14 @@ async def add_card_activity(card_id: int, card_activity_data: _card_schemas.Card
 
 # card label
 
-@card_label_router.post("/{board_id}/{card_id}/{label_id}/add_card_label", response_model=_card_schemas.CardLabel,
+@card_label_router.post("/{board_id}/{card_id}/{label_id}/add_card_label", response_model=_card_schemas.FullCardLabel,
                         dependencies=[member_board_dependency, current_user_dependency])
 async def add_card_label(card_id: int, label_id: int, db: _Session = _Depends(_get_db)):
     db_card_label = await _card_services.add_card_label(db=db, card_id=card_id,
                                                         label_id=label_id)
     if not db_card_label:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
-    return _card_schemas.CardLabel.from_orm(db_card_label)
+    return _card_schemas.FullCardLabel.from_orm(db_card_label)
 
 
 @card_label_router.get("/{board_id}/{card_id}/get_card_labels", response_model=list[_card_schemas.CardLabel],
@@ -396,11 +428,11 @@ async def get_card_labels(card_id: int, db: _Session = _Depends(_get_db)):
                           status_code=_status.HTTP_204_NO_CONTENT,
                           dependencies=[member_board_dependency])
 async def delete_card_label(card_id: int, label_id: int, db: _Session = _Depends(_get_db)):
-    db_card_label = await _card_services.get_card_label_by_label(db=db, card_id=card_id, label_id=label_id)
+    db_card_label = await _card_services.get_card_label_by_id(db=db, card_id=card_id, card_label_id=label_id)
     if not db_card_label:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Label not found")
     db_card_label = await _card_services.delete_card_label(db=db, db_card_label=db_card_label)
-    return _card_schemas.CardLabel.from_orm(db_card_label)
+    # return _card_schemas.CardLabel.from_orm(db_card_label)
 
 
 # card attachment

@@ -14,6 +14,8 @@ class User(_Base):
     signup_date = _Column(_String, default=str(_dt.date.today()))
 
     cards = _relationship("CardMember", back_populates="user")
+    comments = _relationship("Comment", back_populates="user")
+    board_members = _relationship("BoardMember", back_populates="user")
 
     def verify_password(self, password: str):
         return _bcrypt.verify(password, self.hashed_password)
