@@ -162,9 +162,10 @@ async def delete_user_board(board_id: int, db: _Session = _Depends(_get_db),
     db_board = await _board_services.get_user_board_by_id(db=db, board_id=board_id, owner_id=current_user.id)
     if db_board is None:
         raise _HTTPException(status_code=_status.HTTP_404_NOT_FOUND, detail="Board not found")
+    await _board_services.delete_all_members_from_board(db=db, board_id=board_id)
     _ = await _board_services.delete_board(db=db, db_board=db_board)
     #     remove all members from board
-    await _board_services.delete_all_members_from_board(db=db, board_id=board_id)
+
 
 
 # board labels

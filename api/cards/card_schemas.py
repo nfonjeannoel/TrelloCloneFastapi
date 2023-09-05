@@ -118,6 +118,10 @@ class CardActivity(_pydantic.BaseModel):
         orm_mode = True
 
 
+class FullCardActivity(CardActivity):
+    user: _User | None
+
+
 class CardActivityCreate(_pydantic.BaseModel):
     activity: str
 
@@ -158,6 +162,6 @@ class FullCard(Card):
     comments: list[FullComment] | None
     check_lists: list[CheckList] | None
     card_members: list[CardMember] | None
-    card_activities: list[CardActivity] | None
+    card_activities: list[FullCardActivity] | None
     labels: list[FullCardLabel] | None
     attachments: list[CardAttachment] | None

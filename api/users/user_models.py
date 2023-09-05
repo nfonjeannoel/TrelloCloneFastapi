@@ -16,6 +16,7 @@ class User(_Base):
     cards = _relationship("CardMember", back_populates="user")
     comments = _relationship("Comment", back_populates="user")
     board_members = _relationship("BoardMember", back_populates="user")
+    card_activities = _relationship("CardActivity", back_populates="user")
 
     def verify_password(self, password: str):
         return _bcrypt.verify(password, self.hashed_password)

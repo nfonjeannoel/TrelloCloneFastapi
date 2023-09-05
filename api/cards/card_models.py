@@ -71,6 +71,7 @@ class CardActivity(_Base):
     created_datetime = _Column(_String, default=str(_dt.datetime.now()))
 
     card = _relationship("Card", back_populates="card_activities")
+    user = _relationship("User", back_populates="card_activities")
 
 
 class CardLabel(_Base):
